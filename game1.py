@@ -1,3 +1,11 @@
+################################################################################
+## This directory contains game1.py (The main game), cmu_112_graphics.py
+## (The 112 graphics module), and card images.
+## Card images 0-35.png are photos taken by me of hard copies of game cards.
+## Card images cabbage_cards-1-small....tomato_cards-1-small.png are retrieved
+## from https://www.alderac.com/point-salad-2/.
+################################################################################
+
 from cmu_112_graphics import *
 from PIL import ImageTk, Image
 import random, math, copy
@@ -778,6 +786,7 @@ class BotPlayer(Player):
                 app.gameOver = True
     
     def getHighestCountVeg(self):
+        # return a list of veggies in the order from most needed to least
         neededVeg = []
         for card in self.hand:
             if isinstance(card.front, PtSide):
@@ -797,6 +806,7 @@ class BotPlayer(Player):
         return result
 
     def normalAutoPilot(self, app):
+        # handles movements for normal level bot
         if self.isPlayersTurn(app):
             if arePilesEmpty(app):
                 action = 'veg'
@@ -838,16 +848,18 @@ class BotPlayer(Player):
                 app.gameOver = True
         
     def hardAutoPilot(self, app):
+        # handles movements for hard bot
         if self.isPlayersTurn(app):
             depth = app.depth
-            currentEval = minimax(app.piles, app.vegMkt, app.player1, app.player2, depth, 2)
+            currentEval = minimax(app.piles, app.vegMkt, app.player1, app.player2, depth, -math.inf, math.inf, 2)
             for pileNum in range(3):
                 piles = copy.deepcopy(app.piles)
                 vegMkt = copy.deepcopy(app.vegMkt)
                 player1 = copy.deepcopy(app.player1)
                 player2 = copy.deepcopy(app.player2)
                 player2.drawFromPile(piles[pileNum])
-                evl = minimax(piles, vegMkt, player1, player2, depth-1, 1)
+                # very important to use copies
+                evl = minimax(piles, vegMkt, player1, player2, depth-1, -math.inf, math.inf, 1)
                 print(f'evl: {evl} current evl: {currentEval}')
                 if evl == currentEval:
                     self.drawFromPile(app.piles[pileNum])
@@ -859,11 +871,12 @@ class BotPlayer(Player):
                     vegMkt = copy.deepcopy(app.vegMkt)
                     player1 = copy.deepcopy(app.player1)
                     player2 = copy.deepcopy(app.player2)
+                    # very important to use copies
                     player2.drawFromVegMkt(vegMkt, i)
                     vegMkt.drawFromPile(piles, i)
                     player2.drawFromVegMkt(vegMkt, j)
                     vegMkt.drawFromPile(piles, j)
-                    evl = minimax(piles, vegMkt, player1, player2, depth-1, 1)
+                    evl = minimax(piles, vegMkt, player1, player2, depth-1, -math.inf, math.inf, 1)
                     print(f'evl: {evl} current evl: {currentEval}')
                     if evl == currentEval:
                         self.drawFromVegMkt(app.vegMkt, i)
@@ -876,6 +889,7 @@ class BotPlayer(Player):
                         return
 
     def dynamicAutoPilot(self, app):
+        # dynamic mode movements
         if heuristic(app.player1, app.player2) < -10:
             self.autoPilot(app)
         elif -10 <= heuristic(app.player1, app.player2) <= 10:
@@ -934,6 +948,7 @@ def appStarted(app):
     app.smallOnionImg = app.scaleImage(app.onionImg, 0.625) #
 
 def getPtSideImg(app, cardNum):
+    # return imgs for ptSide
     return app.scaleImage(Image.open(f'{cardNum}.jpg'), 0.8)
 
 def getSmallPtSideImg(app, cardNum):
@@ -948,11 +963,13 @@ def ifGameOver(vegMkt):
     return True
 
 def heuristic(player1, player2):
+    # return the static evaluation of the current game state
     player1Score = player1.getScore()
     player2Score = player2.getScore()
     return player1Score - player2Score
 
-def minimax(piles, vegMkt, player1, player2, depth, playerNum):
+def minimax(piles, vegMkt, player1, player2, depth, alpha, beta, playerNum):
+    # use minimax to evaluate the current game state
     if depth == 0 or ifGameOver(vegMkt):
         return heuristic(player1, player2)
     if playerNum == 1:
@@ -965,21 +982,31 @@ def minimax(piles, vegMkt, player1, player2, depth, playerNum):
             TvegMkt = copy.deepcopy(vegMkt)
             Tplayer1 = copy.deepcopy(player1)
             Tplayer2 = copy.deepcopy(player2)
+            # use temporary variables to copy
             Tplayer1.drawFromPile(Tpiles[pileNum])
-            evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, 2)
+            evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, alpha, beta, 2)
             maxEval = max(maxEval, evl)
+            alpha = max(alpha, evl)
+            if beta <= alpha:
+                break
+            # pruning
         for i in range(6):
             for j in range(6):
                 Tpiles = copy.deepcopy(piles)
                 TvegMkt = copy.deepcopy(vegMkt)
                 Tplayer1 = copy.deepcopy(player1)
                 Tplayer2 = copy.deepcopy(player2)
+                # use temporary variables to copy
                 Tplayer1.drawFromVegMkt(vegMkt, i)
                 TvegMkt.drawFromPile(Tpiles, i)
                 Tplayer1.drawFromVegMkt(TvegMkt, j)
                 TvegMkt.drawFromPile(Tpiles, j)
-                evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, 2)
+                evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, alpha, beta, 2)
                 maxEval = max(maxEval, evl)
+                alpha = max(alpha, evl)
+                if beta <= alpha:
+                    break
+                # pruning
         return maxEval
     else:
         minEval = math.inf
@@ -991,21 +1018,31 @@ def minimax(piles, vegMkt, player1, player2, depth, playerNum):
             TvegMkt = copy.deepcopy(vegMkt)
             Tplayer1 = copy.deepcopy(player1)
             Tplayer2 = copy.deepcopy(player2)
+            # use temporary variables to copy
             Tplayer2.drawFromPile(Tpiles[pileNum])
-            evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, 1)
+            evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, alpha, beta, 1)
             minEval = min(minEval, evl)
+            beta = min(beta, evl)
+            if beta <= alpha:
+                break
+            # pruning
         for i in range(6):
             for j in range(6):
                 Tpiles = copy.deepcopy(piles)
                 TvegMkt = copy.deepcopy(vegMkt)
                 Tplayer1 = copy.deepcopy(player1)
                 Tplayer2 = copy.deepcopy(player2)
+                # use temporary variables to copy
                 Tplayer2.drawFromVegMkt(TvegMkt, i)
                 TvegMkt.drawFromPile(Tpiles, i)
                 Tplayer2.drawFromVegMkt(TvegMkt, j)
                 TvegMkt.drawFromPile(Tpiles, j)
-                evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, 1)
+                evl = minimax(Tpiles, TvegMkt, Tplayer1, Tplayer2, depth-1, alpha, beta, 1)
                 minEval = min(minEval, evl)
+                beta = min(beta, evl)
+                if beta <= alpha:
+                    break
+                # pruning
         return minEval
 
 def arePilesEmpty(app):
@@ -1064,6 +1101,7 @@ def pileClicked(app, event):
         return None
 
 def restartButtonClicked(app, event):
+    # check if restart button is clicked
     x0 = 10
     y0 = 10
     x1 = 140
@@ -1093,6 +1131,7 @@ def mousePressed(app, event):
             not app.inNormalBotMode and 
             not app.inHardBotMode and
             not app.inDynamicBotMode):
+            # only move when not in bot mode
                 app.isVegClickedPrev = not app.isVegClickedPrev
                 # account for 2 veggies in a row
                 app.player2.drawFromVegMkt(app.vegMkt, vegNum)
@@ -1116,6 +1155,7 @@ def mousePressed(app, event):
             not app.inNormalBotMode and 
             not app.inHardBotMode and
             not app.inDynamicBotMode):
+            # only move when not in bot mode
                 app.player2.drawFromPile(app.piles[pileNum])
                 app.counter += 1
         elif app.counter % 2 == 0:
@@ -1125,6 +1165,7 @@ def mousePressed(app, event):
         not app.inNormalBotMode and
         not app.inHardBotMode and
         not app.inDynamicBotMode):
+        # only move when not in bot mode
             app.player2.optionalFlip(app, event)
 
 def keyPressed(app, event):
@@ -1254,7 +1295,7 @@ def drawStartScreen(app, canvas):
         'point cards in order to score the most points for the \n'\
         'ingredients in their salad!'
     canvas.create_text(cx, cy-150, text=title, font='Arial 64 bold')
-    canvas.create_text(cx, cy-50, text=start, font='Arial 18')
+    canvas.create_text(cx, cy-25, text=start, font='Arial 18')
     canvas.create_text(cx, cy+150, text=overview, font='Arial 32')
 
 def redrawAll(app, canvas):
