@@ -862,7 +862,6 @@ class BotPlayer(Player):
                 player2.drawFromPile(piles[pileNum])
                 # very important to use copies
                 evl = minimax(piles, vegMkt, player1, player2, depth-1, -math.inf, math.inf, 1)
-                print(f'evl: {evl} current evl: {currentEval}')
                 if evl == currentEval:
                     self.drawFromPile(app.piles[pileNum])
                     app.counter += 1
@@ -879,7 +878,6 @@ class BotPlayer(Player):
                     player2.drawFromVegMkt(vegMkt, j)
                     vegMkt.drawFromPile(piles, j)
                     evl = minimax(piles, vegMkt, player1, player2, depth-1, -math.inf, math.inf, 1)
-                    print(f'evl: {evl} current evl: {currentEval}')
                     if evl == currentEval:
                         self.drawFromVegMkt(app.vegMkt, i)
                         app.vegMkt.drawFromPile(app.piles, i)
