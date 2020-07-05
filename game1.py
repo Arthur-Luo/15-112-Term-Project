@@ -1,9 +1,11 @@
 ################################################################################
 ## This directory contains game1.py (The main game), cmu_112_graphics.py
 ## (The 112 graphics module), and card images.
-## Card images 0-35.png are photos taken by me of hard copies of game cards.
+## Card images 0...35.png are photos taken by me of hard copies of game cards.
 ## Card images cabbage_cards-1-small....tomato_cards-1-small.png are retrieved
 ## from https://www.alderac.com/point-salad-2/.
+## This file, game1.py, is the main game file and runs the whole game by calling
+## runApp()
 ################################################################################
 
 from cmu_112_graphics import *
